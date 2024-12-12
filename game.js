@@ -28,8 +28,8 @@ class Player {
         this.radius = 15;
         this.rotation = 0;
         this.velocity = { x: 0, y: 0 };
-        this.thrust = 0.3;
-        this.friction = 0.99;
+        this.thrust = 0.2; // Reduced from 0.3 to 0.2
+        this.friction = 0.98; // Increased friction from 0.99 to 0.98 to slow down faster
         this.rotationSpeed = 5;
         this.isInvincible = false;
         this.invincibleTimer = 0;
@@ -197,12 +197,21 @@ class PowerUp {
         this.type = 'invincibility';
         this.pulseSize = 0;
         this.pulseDirection = 0.2;
+        this.lifetime = 600; // 10 seconds at 60fps
+        this.opacity = 1;
     }
 
     draw() {
-        // Draw pulsing star
+        // Update lifetime and opacity
+        this.lifetime--;
+        if (this.lifetime <= 180) { // Last 3 seconds
+            this.opacity = this.lifetime / 180; // Fade from 1 to 0 over 3 seconds
+        }
+
+        // Draw pulsing star with opacity
         ctx.save();
         ctx.translate(this.x, this.y);
+        ctx.globalAlpha = this.opacity;
         
         // Draw star shape
         ctx.beginPath();
@@ -224,6 +233,10 @@ class PowerUp {
         if (this.pulseSize > 5 || this.pulseSize < 0) {
             this.pulseDirection *= -1;
         }
+    }
+
+    update() {
+        return this.lifetime > 0;
     }
 }
 
@@ -317,7 +330,7 @@ function update() {
     player.draw();
 
     // Update power-ups
-    powerUps.forEach((powerUp, index) => {
+    powerUps = powerUps.filter((powerUp, index) => {
         powerUp.draw();
         
         // Check collision with player
@@ -331,8 +344,10 @@ function update() {
                 player.isInvincible = true;
                 player.invincibleTimer = 0;
             }
-            powerUps.splice(index, 1);
+            return false;
         }
+        
+        return powerUp.update();
     });
 
     // Update bullets
